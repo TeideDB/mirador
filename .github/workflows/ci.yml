@@ -14,7 +14,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - name: Install
+      - name: Install Teide
+        run: |
+          git clone --depth=1 https://github.com/TeideDB/teide-py.git /tmp/teide-py
+          git clone --depth=1 https://github.com/TeideDB/teide.git /tmp/teide-py/vendor/teide
+          pip install /tmp/teide-py
+      - name: Install Mirador
         run: pip install -e ".[dev]"
       - name: Test
         run: pytest tests/
