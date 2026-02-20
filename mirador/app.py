@@ -33,9 +33,14 @@ async def lifespan(app: FastAPI):
     _teide = TeideLib(lib_path=lib_path)
     _teide.sym_init()
     _teide.arena_init()
+
+    from mirador.engine.scheduler import start_scheduler, stop_scheduler
+    await start_scheduler()
+
     try:
         yield
     finally:
+        await stop_scheduler()
         _teide.pool_destroy()
         _teide.sym_destroy()
         _teide.arena_destroy_all()

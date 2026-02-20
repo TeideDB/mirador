@@ -54,7 +54,7 @@ function PipelineNode({ id, data, selected }: NodeProps & { data: NodeData }) {
     [commitEdit, setEditingNodeId]
   );
 
-  const inputCount = data.category === 'input' ? 0 : 1;
+  const inputCount = (data.category === 'input' || data.category === 'trigger') ? 0 : 1;
   const outputCount = data.category === 'output' ? 0 : 1;
 
   return (

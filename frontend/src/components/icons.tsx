@@ -16,6 +16,8 @@ import {
   FaEnvelope,
   FaGoogleDrive,
   FaRobot,
+  FaClock,
+  FaGlobe,
 } from 'react-icons/fa6';
 import { TbMathFunction } from 'react-icons/tb';
 
@@ -46,6 +48,8 @@ const iconMap: Record<string, React.ComponentType<{ size?: number }>> = {
   ai: FaRobot,
   gmail: FaEnvelope,
   google_drive: FaGoogleDrive,
+  schedule_trigger: FaClock,
+  http_request: FaGlobe,
 };
 
 function IconFallback({ size = 16 }: { size?: number }) {

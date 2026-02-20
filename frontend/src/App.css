@@ -293,6 +293,7 @@
   white-space: nowrap;
 }
 
+.inspector-badge.cat-trigger { background: #fef3c7; color: #92400e; }
 .inspector-badge.cat-input   { background: var(--primary-pale); color: var(--primary-dark); }
 .inspector-badge.cat-compute { background: #dcfce7; color: #166534; }
 .inspector-badge.cat-generic { background: #ede9fe; color: #5b21b6; }

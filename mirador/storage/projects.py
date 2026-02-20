@@ -1,6 +1,7 @@
 """Project storage — JSON-on-disk project and pipeline metadata."""
 
 import json
+import os
 import time
 from pathlib import Path
 
@@ -15,7 +16,7 @@ class ProjectMeta(BaseModel):
 
 class ProjectStore:
     def __init__(self, root: Path | None = None):
-        self.root = root or Path("mirador_data")
+        self.root = root or Path(os.environ.get("MIRADOR_DATA_DIR", "mirador_data"))
 
     def _projects_dir(self) -> Path:
         d = self.root / "projects"

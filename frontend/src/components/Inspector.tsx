@@ -191,6 +191,16 @@ export default function Inspector() {
             </div>
           )}
 
+          {/* Schedule Trigger fields */}
+          {nodeType === 'schedule_trigger' && (
+            <ScheduleTriggerInspector config={config} setConfig={setConfig} />
+          )}
+
+          {/* HTTP Request fields */}
+          {nodeType === 'http_request' && (
+            <HttpRequestInspector config={config} setConfig={setConfig} />
+          )}
+
           {/* PDF Render fields */}
           {nodeType === 'pdf_render' && (
             <PdfRenderInspector config={config} setConfig={setConfig} />
@@ -198,6 +208,216 @@ export default function Inspector() {
         </div>
       </div>
     </div>
+  );
+}
+
+/* ---------- Schedule Trigger inspector sub-component ---------- */
+
+const CRON_PRESETS = [
+  { label: 'Every 5 min', cron: '*/5 * * * *' },
+  { label: 'Every 15 min', cron: '*/15 * * * *' },
+  { label: 'Every hour', cron: '0 * * * *' },
+  { label: 'Daily 9 AM', cron: '0 9 * * *' },
+  { label: 'Daily midnight', cron: '0 0 * * *' },
+  { label: 'Weekly Monday', cron: '0 9 * * 1' },
+];
+
+function ScheduleTriggerInspector({
+  config,
+  setConfig,
+}: {
+  config: Record<string, any>;
+  setConfig: (key: string, value: any) => void;
+}) {
+  return (
+    <>
+      <div className="field-group">
+        <label>Cron Expression</label>
+        <input
+          type="text"
+          value={config.cron_expression ?? ''}
+          onChange={(e) => setConfig('cron_expression', e.target.value)}
+          placeholder="*/5 * * * *"
+          spellCheck={false}
+          style={{ fontFamily: 'var(--font-mono, monospace)' }}
+        />
+      </div>
+      <div className="field-group">
+        <label>Presets</label>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+          {CRON_PRESETS.map((p) => (
+            <button
+              key={p.cron}
+              className="sql-template-btn"
+              onClick={() => setConfig('cron_expression', p.cron)}
+              style={{ fontSize: 11 }}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="field-group">
+        <label>Timezone</label>
+        <input
+          type="text"
+          value={config.timezone ?? 'UTC'}
+          onChange={(e) => setConfig('timezone', e.target.value)}
+          placeholder="UTC"
+        />
+      </div>
+      <div className="field-group">
+        <div className="checkbox-row">
+          <input
+            type="checkbox"
+            checked={config.enabled ?? true}
+            onChange={(e) => setConfig('enabled', e.target.checked)}
+          />
+          <span>Enabled</span>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ---------- HTTP Request inspector sub-component ---------- */
+
+interface HeaderRow { key: string; value: string }
+
+function HttpRequestInspector({
+  config,
+  setConfig,
+}: {
+  config: Record<string, any>;
+  setConfig: (key: string, value: any) => void;
+}) {
+  const mode = config.mode ?? 'fetch';
+  const method = config.method ?? 'GET';
+  const headers: HeaderRow[] = config.headers ?? [];
+
+  const [showHeaders, setShowHeaders] = useState(false);
+
+  const updateHeader = (idx: number, field: keyof HeaderRow, val: string) => {
+    const next = [...headers];
+    next[idx] = { ...next[idx], [field]: val };
+    setConfig('headers', next);
+  };
+
+  const addHeader = () => setConfig('headers', [...headers, { key: '', value: '' }]);
+
+  const removeHeader = (idx: number) => {
+    setConfig('headers', headers.filter((_, i) => i !== idx));
+  };
+
+  return (
+    <>
+      {/* Mode toggle */}
+      <div className="query-mode-toggle">
+        <button className={mode === 'fetch' ? 'active' : ''} onClick={() => setConfig('mode', 'fetch')}>
+          Fetch
+        </button>
+        <button className={mode === 'send' ? 'active' : ''} onClick={() => setConfig('mode', 'send')}>
+          Send
+        </button>
+      </div>
+
+      <div className="field-group">
+        <label>URL</label>
+        <input
+          type="text"
+          value={config.url ?? ''}
+          onChange={(e) => setConfig('url', e.target.value)}
+          placeholder="https://api.example.com/data"
+          spellCheck={false}
+        />
+      </div>
+
+      <div className="field-group">
+        <label>Method</label>
+        <select value={method} onChange={(e) => setConfig('method', e.target.value)}>
+          <option value="GET">GET</option>
+          <option value="POST">POST</option>
+          <option value="PUT">PUT</option>
+          <option value="DELETE">DELETE</option>
+        </select>
+      </div>
+
+      {/* Headers (collapsible) */}
+      <div className="query-section">
+        <div className="query-section-header" onClick={() => setShowHeaders(!showHeaders)}>
+          <span className="query-section-chevron">{showHeaders ? '\u25BE' : '\u25B8'}</span>
+          <span>Headers</span>
+          {headers.length > 0 && <span className="query-section-active">&bull;</span>}
+        </div>
+        {showHeaders && (
+          <div className="query-section-body">
+            {headers.map((h, i) => (
+              <div className="array-item" key={i}>
+                <input
+                  type="text"
+                  value={h.key}
+                  onChange={(e) => updateHeader(i, 'key', e.target.value)}
+                  placeholder="Header name"
+                  style={{ flex: 1 }}
+                />
+                <input
+                  type="text"
+                  value={h.value}
+                  onChange={(e) => updateHeader(i, 'value', e.target.value)}
+                  placeholder="Value"
+                  style={{ flex: 1 }}
+                />
+                <button className="remove-btn" onClick={() => removeHeader(i)}>&times;</button>
+              </div>
+            ))}
+            <button className="add-btn" onClick={addHeader}>+ Add header</button>
+          </div>
+        )}
+      </div>
+
+      {/* Body (fetch mode, POST/PUT) */}
+      {mode === 'fetch' && (method === 'POST' || method === 'PUT') && (
+        <div className="field-group">
+          <label>Request Body</label>
+          <CodeEditor
+            value={config.body ?? ''}
+            onChange={(val) => setConfig('body', val)}
+            language="json"
+            placeholder='{"key": "value"}'
+            minHeight="80px"
+          />
+        </div>
+      )}
+
+      {/* JSON Path (fetch mode) */}
+      {mode === 'fetch' && (
+        <div className="field-group">
+          <label>JSON Path</label>
+          <input
+            type="text"
+            value={config.json_path ?? ''}
+            onChange={(e) => setConfig('json_path', e.target.value)}
+            placeholder="data.results"
+            spellCheck={false}
+            style={{ fontFamily: 'var(--font-mono, monospace)' }}
+          />
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+            Dot-notation path to extract from response JSON
+          </span>
+        </div>
+      )}
+
+      <div className="field-group">
+        <label>Timeout (seconds)</label>
+        <input
+          type="number"
+          value={config.timeout ?? 30}
+          onChange={(e) => setConfig('timeout', parseInt(e.target.value) || 30)}
+          min={1}
+          max={300}
+        />
+      </div>
+    </>
   );
 }
 

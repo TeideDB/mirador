@@ -68,11 +68,16 @@ def get_pipeline(slug: str, name: str):
 
 
 @router.put("/{slug}/pipelines/{name}")
-def save_pipeline(slug: str, name: str, body: SavePipelineRequest):
+async def save_pipeline(slug: str, name: str, body: SavePipelineRequest):
     store = get_store()
     if not store.get_project(slug):
         raise HTTPException(status_code=404, detail="Project not found")
-    store.save_pipeline(slug, name, body.model_dump())
+    pipeline = body.model_dump()
+    store.save_pipeline(slug, name, pipeline)
+
+    from mirador.engine.scheduler import sync_schedules
+    await sync_schedules(slug, name, pipeline)
+
     return {"status": "saved"}
 
 
