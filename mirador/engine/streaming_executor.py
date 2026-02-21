@@ -199,7 +199,10 @@ class StreamingExecutor:
                     break
         # Call callback OUTSIDE the lock, only on success
         if tick_ok and self._on_tick_complete:
-            self._on_tick_complete(self._env)
+            try:
+                self._on_tick_complete(self._env)
+            except Exception as exc:
+                logger.error("on_tick_complete callback failed: %s", exc)
 
     @staticmethod
     def _topo_sort(

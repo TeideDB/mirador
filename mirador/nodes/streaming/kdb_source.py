@@ -10,6 +10,11 @@ try:
 except ImportError:
     KDBAdapter = None  # type: ignore[assignment,misc]
 
+try:
+    from teide.api import Table as _TeideTable
+except ImportError:
+    _TeideTable = None  # type: ignore[assignment,misc]
+
 
 class KdbSourceNode(StreamSourceNode):
     meta = NodeMeta(
@@ -56,18 +61,13 @@ class KdbSourceNode(StreamSourceNode):
         def on_message(data):
             if isinstance(data, dict):
                 self._callback(data)
+            elif _TeideTable is not None and isinstance(data, _TeideTable):
+                self._callback({
+                    "df": data,
+                    "rows": len(data),
+                    "columns": data.columns,
+                })
             else:
-                try:
-                    from teide.api import Table
-                    if isinstance(data, Table):
-                        self._callback({
-                            "df": data,
-                            "rows": len(data),
-                            "columns": data.columns,
-                        })
-                        return
-                except ImportError:
-                    pass
                 self._callback({"data": data})
 
         self._adapter.subscribe(on_message)

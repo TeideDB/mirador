@@ -1,7 +1,9 @@
 # mirador/api/ws_dashboard.py
 """WebSocket endpoint for live dashboard data."""
 
+import asyncio
 import logging
+import threading
 from typing import Any
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -12,29 +14,40 @@ router = APIRouter()
 
 # Connected widgets per pipeline: pipeline_key -> {ws -> {widget_id -> view_params}}
 _connections: dict[str, dict[WebSocket, dict[str, dict]]] = {}
+_connections_lock = threading.Lock()
+
+# Captured event loop for cross-thread notifications
+_event_loop: asyncio.AbstractEventLoop | None = None
 
 
 def notify_data_changed(pipeline_key: str, tables: list[str], row_counts: dict[str, int] | None = None):
     """Called by StreamingExecutor after a tick completes.
 
     Sends data_changed signal to all connected dashboard WS clients.
-    This must be called from an async context or use asyncio.run_coroutine_threadsafe.
+    Called from a background thread — uses run_coroutine_threadsafe.
     """
-    import asyncio
+    with _connections_lock:
+        conns = _connections.get(pipeline_key, {})
+        ws_list = list(conns.keys())
 
-    conns = _connections.get(pipeline_key, {})
+    if not ws_list or _event_loop is None:
+        return
+
     msg: dict[str, Any] = {"event": "data_changed", "tables": tables}
     if row_counts:
         msg["row_counts"] = row_counts
 
-    for ws in list(conns.keys()):
-        try:
-            loop = asyncio.get_event_loop()
-            loop.call_soon_threadsafe(
-                asyncio.ensure_future, ws.send_json(msg)
-            )
-        except Exception:
-            pass
+    async def _send_all():
+        for ws in ws_list:
+            try:
+                await ws.send_json(msg)
+            except Exception:
+                pass
+
+    try:
+        asyncio.run_coroutine_threadsafe(_send_all(), _event_loop)
+    except Exception:
+        pass
 
 
 @router.websocket("/ws/dashboard/{pipeline_key:path}")
@@ -42,7 +55,12 @@ async def ws_dashboard(ws: WebSocket, pipeline_key: str):
     """Live dashboard data channel."""
     from mirador.app import get_publish_registry
 
+    global _event_loop
     await ws.accept()
+
+    # Capture the running event loop for cross-thread notifications
+    if _event_loop is None:
+        _event_loop = asyncio.get_running_loop()
 
     registry = get_publish_registry()
     entry = registry.get(pipeline_key)
@@ -54,9 +72,10 @@ async def ws_dashboard(ws: WebSocket, pipeline_key: str):
     env = entry["env"]
 
     # Track this connection
-    if pipeline_key not in _connections:
-        _connections[pipeline_key] = {}
-    _connections[pipeline_key][ws] = {}
+    with _connections_lock:
+        if pipeline_key not in _connections:
+            _connections[pipeline_key] = {}
+        _connections[pipeline_key][ws] = {}
 
     try:
         while True:
@@ -100,10 +119,11 @@ async def ws_dashboard(ws: WebSocket, pipeline_key: str):
     except WebSocketDisconnect:
         pass
     finally:
-        conns = _connections.get(pipeline_key, {})
-        conns.pop(ws, None)
-        if not conns:
-            _connections.pop(pipeline_key, None)
+        with _connections_lock:
+            conns = _connections.get(pipeline_key, {})
+            conns.pop(ws, None)
+            if not conns:
+                _connections.pop(pipeline_key, None)
 
 
 def _query_table(table_data: Any, page: int, page_size: int,

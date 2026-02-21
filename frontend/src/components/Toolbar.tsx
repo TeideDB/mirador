@@ -199,7 +199,7 @@ export default function Toolbar() {
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
             {isPublished
-              ? <path d="M7 1v8M3 5l4-4 4 4M2 13h10"/>
+              ? <path d="M7 13V5M3 9l4 4 4-4M2 1h10"/>
               : <path d="M7 1v8M3 5l4-4 4 4M2 13h10"/>}
           </svg>
           {isPublished ? ' Unpublish' : ' Publish'}

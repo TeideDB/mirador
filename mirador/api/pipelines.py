@@ -126,11 +126,17 @@ def publish_pipeline(slug: str, pipeline_name: str):
     pipeline["published"] = True
     store.save_pipeline(slug, pipeline_name, pipeline)
 
-    # Start executor
+    # Start executor with live dashboard notification
+    from mirador.api.ws_dashboard import notify_data_changed
+
     env = TableEnv()
     node_registry = get_registry()
     executor = StreamingExecutor(node_registry)
-    executor.start(pipeline, env)
+
+    def on_tick(tick_env: TableEnv):
+        notify_data_changed(key, tick_env.list())
+
+    executor.start(pipeline, env, on_tick_complete=on_tick)
     registry.register(key, env, executor)
 
     return {"status": "published", "key": key}

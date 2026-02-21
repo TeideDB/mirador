@@ -72,6 +72,7 @@ async def lifespan(app: FastAPI):
     from mirador.engine.streaming_executor import StreamingExecutor
     from mirador.engine.table_env import TableEnv
     from mirador.api.nodes import get_registry as get_node_registry
+    from mirador.api.ws_dashboard import notify_data_changed
 
     store = ProjectStore()
     for proj in store.list_projects():
@@ -84,7 +85,11 @@ async def lifespan(app: FastAPI):
                     env = TableEnv()
                     node_reg = get_node_registry()
                     executor = StreamingExecutor(node_reg)
-                    executor.start(pipeline, env)
+
+                    def on_tick(tick_env, k=key):
+                        notify_data_changed(k, tick_env.list())
+
+                    executor.start(pipeline, env, on_tick_complete=on_tick)
                     _publish_registry.register(key, env, executor)
                     _logger.info("Restored published pipeline: %s", key)
                 except Exception as exc:
