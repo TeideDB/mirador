@@ -54,11 +54,14 @@ function PipelineNode({ id, data, selected }: NodeProps & { data: NodeData }) {
     [commitEdit, setEditingNodeId]
   );
 
-  const inputCount = (data.category === 'input' || data.category === 'trigger') ? 0 : 1;
+  const inputCount = ['input', 'trigger', 'stream_source'].includes(data.category) ? 0 : 1;
   const outputCount = data.category === 'output' ? 0 : 1;
 
+  const isInit = data.category === 'init';
+  const isStreamSource = data.category === 'stream_source';
+
   return (
-    <div className={`pipeline-node${selected ? ' selected' : ''}${isExecuting ? ' executing' : ''}`}>
+    <div className={`pipeline-node${selected ? ' selected' : ''}${isExecuting ? ' executing' : ''}${isInit ? ' init-node' : ''}${isStreamSource ? ' stream-node' : ''}`}>
       {/* Handles positioned at icon box center */}
       {Array.from({ length: inputCount }).map((_, i) => (
         <Handle key={`in-${i}`} type="target" position={Position.Left} id={`in-${i}`} style={{ top: 19 }} />

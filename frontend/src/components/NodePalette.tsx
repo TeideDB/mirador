@@ -44,7 +44,7 @@ export default function NodePalette() {
     : nodeTypes;
 
   // Group by category, maintain consistent order
-  const categoryOrder = ['trigger', 'input', 'compute', 'generic', 'output'];
+  const categoryOrder = ['init', 'stream_source', 'trigger', 'input', 'compute', 'generic', 'output'];
   const grouped: Record<string, NodeTypeMeta[]> = {};
   for (const nt of filtered) {
     if (!grouped[nt.category]) grouped[nt.category] = [];

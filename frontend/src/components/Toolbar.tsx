@@ -1,19 +1,25 @@
 import { useReactFlow } from '@xyflow/react';
 import useStore from '../store/useStore';
-import { runPipelineStream, savePipelineState, type SSEEvent } from '../api/client';
+import { runPipelineStream, savePipelineState, publishPipeline, unpublishPipeline, type SSEEvent } from '../api/client';
 
 export default function Toolbar() {
-  const nodeCount = useStore((s) => s.nodes.length);
+  const nodes = useStore((s) => s.nodes);
+  const nodeCount = nodes.length;
   const isRunning = useStore((s) => s.isRunning);
   const isDirty = useStore((s) => s.isDirty);
   const lastFailedNodeId = useStore((s) => s.lastFailedNodeId);
+  const isPublished = useStore((s) => s.isPublished);
+  const setIsPublished = useStore((s) => s.setIsPublished);
   const setIsRunning = useStore((s) => s.setIsRunning);
   const setNodeResults = useStore((s) => s.setNodeResults);
   const setExecutingNodeId = useStore((s) => s.setExecutingNodeId);
   const clearPipeline = useStore((s) => s.clearPipeline);
   const setView = useStore((s) => s.setView);
   const pipelineName = useStore((s) => s.currentWorkflowName);
+  const projectSlug = useStore((s) => s.currentProjectSlug);
   const { fitView } = useReactFlow();
+
+  const hasStreamSource = nodes.some((n) => n.data.category === 'stream_source');
 
   const handleSave = () => {
     const s = useStore.getState();
@@ -126,6 +132,21 @@ export default function Toolbar() {
     if (lastFailedNodeId) executePipeline(lastFailedNodeId);
   };
 
+  const handlePublishToggle = async () => {
+    if (!projectSlug || !pipelineName) return;
+    try {
+      if (isPublished) {
+        await unpublishPipeline(projectSlug, pipelineName);
+        setIsPublished(false);
+      } else {
+        await publishPipeline(projectSlug, pipelineName);
+        setIsPublished(true);
+      }
+    } catch (err: any) {
+      console.error('Publish/unpublish failed:', err);
+    }
+  };
+
   return (
     <div className="toolbar">
       {/* Left group: navigation + identity */}
@@ -169,6 +190,21 @@ export default function Toolbar() {
       </button>
 
       <span className="toolbar-divider" />
+
+      {hasStreamSource && (
+        <button
+          className={`toolbar-icon-btn${isPublished ? ' published' : ''}`}
+          onClick={handlePublishToggle}
+          title={isPublished ? 'Unpublish pipeline' : 'Publish pipeline'}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+            {isPublished
+              ? <path d="M7 1v8M3 5l4-4 4 4M2 13h10"/>
+              : <path d="M7 1v8M3 5l4-4 4 4M2 13h10"/>}
+          </svg>
+          {isPublished ? ' Unpublish' : ' Publish'}
+        </button>
+      )}
 
       <button
         className="run-btn"

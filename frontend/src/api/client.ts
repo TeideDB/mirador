@@ -104,6 +104,16 @@ export async function savePipelineState(slug: string, name: string, nodes: any[]
   await api.put(`/projects/${slug}/pipelines/${name}`, { nodes, edges });
 }
 
+/* ---- Publish / Unpublish ---- */
+
+export async function publishPipeline(slug: string, name: string): Promise<any> {
+  return (await api.post(`/pipelines/${slug}/${name}/publish`)).data;
+}
+
+export async function unpublishPipeline(slug: string, name: string): Promise<any> {
+  return (await api.post(`/pipelines/${slug}/${name}/unpublish`)).data;
+}
+
 /* ---- Dashboard API ---- */
 
 export async function fetchDashboards(slug: string): Promise<string[]> {

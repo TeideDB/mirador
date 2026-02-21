@@ -561,6 +561,17 @@
   50% { box-shadow: 0 0 0 6px rgba(34,197,94,0.08); }
 }
 
+/* Init node: dashed border, slightly faded */
+.pipeline-node.init-node .node-icon-box {
+  border-style: dashed;
+  opacity: 0.85;
+}
+
+/* Stream source node: green border */
+.pipeline-node.stream-node .node-icon-box {
+  border-color: var(--green, #22c55e);
+}
+
 /* Name label below the icon box — absolute so it doesn't widen the node */
 .pipeline-node .node-name {
   position: absolute;

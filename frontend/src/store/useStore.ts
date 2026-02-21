@@ -99,6 +99,8 @@ export interface PipelineState {
   isDirty: boolean;
   lastFailedNodeId: string | null;
   pipelineSessionId: string | null;
+  isStreaming: boolean;
+  isPublished: boolean;
 
   // Console + bottom tab
   consoleMessages: ConsoleMessage[];
@@ -127,6 +129,8 @@ export interface PipelineState {
   setDirty: (dirty: boolean) => void;
   setLastFailedNodeId: (id: string | null) => void;
   setPipelineSessionId: (id: string | null) => void;
+  setIsStreaming: (streaming: boolean) => void;
+  setIsPublished: (published: boolean) => void;
   addConsoleMessage: (level: ConsoleMessage['level'], text: string) => void;
   clearConsole: () => void;
   setBottomTab: (tab: 'preview' | 'console') => void;
@@ -197,6 +201,8 @@ const useStore = create<PipelineState>()(persist((set, get) => ({
   isDirty: false,
   lastFailedNodeId: null,
   pipelineSessionId: null,
+  isStreaming: false,
+  isPublished: false,
   consoleMessages: [],
   bottomTab: 'preview',
 
@@ -220,7 +226,17 @@ const useStore = create<PipelineState>()(persist((set, get) => ({
   },
 
   onConnect: (connection) => {
-    set({ edges: addEdge(connection, get().edges), isDirty: true });
+    const state = get();
+    const sourceNode = state.nodes.find(n => n.id === connection.source);
+    const targetNode = state.nodes.find(n => n.id === connection.target);
+    if (sourceNode && targetNode) {
+      const sourceIsInit = sourceNode.data.category === 'init';
+      const targetIsInit = targetNode.data.category === 'init';
+      if (sourceIsInit !== targetIsInit) {
+        return; // Block init <-> non-init connections
+      }
+    }
+    set({ edges: addEdge(connection, state.edges), isDirty: true });
   },
 
   addNode: (type, label, category, position) => {
@@ -296,6 +312,9 @@ const useStore = create<PipelineState>()(persist((set, get) => ({
   setPipelineSessionId: (id) => {
     set({ pipelineSessionId: id });
   },
+
+  setIsStreaming: (streaming) => set({ isStreaming: streaming }),
+  setIsPublished: (published) => set({ isPublished: published }),
 
   addConsoleMessage: (level, text) => {
     set({ consoleMessages: [...get().consoleMessages, { timestamp: Date.now(), level, text }] });
