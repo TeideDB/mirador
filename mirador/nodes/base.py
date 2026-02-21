@@ -29,6 +29,6 @@ class BaseNode:
 
     meta: NodeMeta  # subclasses define this
 
-    def execute(self, inputs: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
+    def execute(self, inputs: dict[str, Any], config: dict[str, Any], env=None) -> dict[str, Any]:
         """Execute this node. Receives merged upstream dicts, returns output dict."""
         raise NotImplementedError

@@ -36,3 +36,25 @@ def test_clear():
     env.set("b", 2)
     env.clear()
     assert env.list() == []
+
+
+def test_env_passthrough_in_execute():
+    """Verify BaseNode.execute() accepts env kwarg without error."""
+    from mirador.nodes.base import BaseNode, NodeMeta, NodePort
+
+    class DummyNode(BaseNode):
+        meta = NodeMeta(
+            id="dummy", label="Dummy", category="generic",
+            inputs=[], outputs=[NodePort(name="out", description="test")],
+        )
+
+        def execute(self, inputs, config, env=None):
+            return {"env_present": env is not None}
+
+    node = DummyNode()
+    result = node.execute({}, {}, env="fake_env")
+    assert result["env_present"] is True
+
+    # Also works without env (backward compatible)
+    result2 = node.execute({}, {})
+    assert result2["env_present"] is False
