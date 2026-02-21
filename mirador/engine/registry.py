@@ -20,8 +20,10 @@ class NodeRegistry:
         import mirador.nodes.generic as generic_pkg
         import mirador.nodes.outputs as outputs_pkg
         import mirador.nodes.triggers as triggers_pkg
+        import mirador.nodes.streaming as streaming_pkg
+        import mirador.nodes.init as init_pkg
 
-        for pkg in [inputs_pkg, compute_pkg, generic_pkg, outputs_pkg, triggers_pkg]:
+        for pkg in [inputs_pkg, compute_pkg, generic_pkg, outputs_pkg, triggers_pkg, streaming_pkg, init_pkg]:
             for _importer, modname, _ispkg in pkgutil.iter_modules(pkg.__path__):
                 mod = importlib.import_module(f"{pkg.__name__}.{modname}")
                 for attr_name in dir(mod):
