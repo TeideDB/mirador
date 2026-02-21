@@ -17,12 +17,12 @@ export default function BarChartWidget({ data, config }: Props) {
   const maxVal = Math.max(...values, 1);
 
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: '100%', padding: '4px 0' }}>
+    <div style={{ display: 'flex', alignItems: 'stretch', gap: 2, height: '100%', padding: '4px 0' }}>
       {rows.map((row, i) => {
         const val = Number(row[yCol]) || 0;
         const pct = (val / maxVal) * 100;
         return (
-          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 0 }}>
+          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', minWidth: 0 }}>
             <div
               style={{
                 width: '80%',

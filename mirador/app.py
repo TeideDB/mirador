@@ -1,6 +1,8 @@
 """FastAPI entry point for Mirador."""
 
 import os
+import subprocess
+import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -11,6 +13,7 @@ from teide import TeideLib
 
 from mirador import __version__
 from mirador.api.dashboards import router as dashboards_router
+from mirador.api.dependencies import router as dependencies_router
 from mirador.api.files import router as files_router
 from mirador.api.nodes import router as nodes_router
 from mirador.api.pipelines import router as pipelines_router
@@ -28,6 +31,14 @@ def get_teide() -> TeideLib:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Restore user-installed Python packages from data volume
+    req_file = Path(os.environ.get("MIRADOR_DATA_DIR", "mirador_data")) / "requirements.txt"
+    if req_file.exists() and req_file.stat().st_size > 0:
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "-q", "-r", str(req_file)],
+            check=False,
+        )
+
     global _teide
     lib_path = os.environ.get("TEIDE_LIB")
     _teide = TeideLib(lib_path=lib_path)
@@ -59,6 +70,7 @@ app.add_middleware(
 
 
 app.include_router(dashboards_router)
+app.include_router(dependencies_router)
 app.include_router(files_router)
 app.include_router(nodes_router)
 app.include_router(pipelines_router)

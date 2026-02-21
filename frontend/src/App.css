@@ -2938,3 +2938,160 @@
   white-space: pre-wrap;
   font-family: 'SF Mono', 'Fira Code', monospace;
 }
+
+/* ---- Dependencies Modal ---- */
+
+.deps-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 45, 56, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 1200;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 10vh;
+}
+
+.deps-modal {
+  width: 560px;
+  max-width: 90vw;
+  max-height: 75vh;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 16px 48px rgba(28, 45, 56, 0.25);
+  display: flex;
+  flex-direction: column;
+  animation: dropdown-in 0.12s ease-out;
+}
+
+.deps-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.deps-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.deps-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0 4px;
+  line-height: 1;
+}
+.deps-close:hover { color: var(--text); }
+
+.deps-install-bar {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.deps-install-bar input {
+  flex: 1;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  background: var(--surface);
+  color: var(--text);
+}
+.deps-install-bar input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(42, 100, 120, 0.12);
+}
+
+.deps-install-bar button {
+  padding: 7px 16px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.deps-install-bar button:hover:not(:disabled) { background: var(--primary-dark); }
+.deps-install-bar button:disabled { opacity: 0.5; cursor: default; }
+
+.deps-log {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 10px 20px;
+  background: #1a2a33;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: #c8d8e0;
+  border-bottom: 1px solid var(--border);
+}
+
+.deps-log-error {
+  color: #f87171;
+}
+
+.deps-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 20px 16px;
+}
+
+.deps-list-header {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  padding: 8px 0 6px;
+}
+
+.deps-list-empty {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 8px 0;
+}
+
+.deps-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+}
+
+.deps-pkg-name {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.deps-remove-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  border-radius: 3px;
+}
+.deps-remove-btn:hover:not(:disabled) {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+.deps-remove-btn:disabled { opacity: 0.3; cursor: default; }
