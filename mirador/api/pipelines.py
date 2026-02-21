@@ -5,7 +5,7 @@ import queue
 import threading
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -101,6 +101,61 @@ def run_pipeline_stream(payload: PipelinePayload):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@router.post("/{slug}/{pipeline_name}/publish")
+def publish_pipeline(slug: str, pipeline_name: str):
+    """Publish a streaming pipeline — starts it server-side."""
+    from mirador.app import get_publish_registry, get_teide
+    from mirador.engine.streaming_executor import StreamingExecutor
+    from mirador.engine.table_env import TableEnv
+    from mirador.storage.projects import ProjectStore
+
+    store = ProjectStore()
+    pipeline = store.load_pipeline(slug, pipeline_name)
+    if pipeline is None:
+        raise HTTPException(status_code=404, detail="Pipeline not found")
+
+    key = f"{slug}/{pipeline_name}"
+    registry = get_publish_registry()
+
+    if registry.get(key):
+        raise HTTPException(status_code=409, detail="Already published")
+
+    # Mark as published
+    pipeline["published"] = True
+    store.save_pipeline(slug, pipeline_name, pipeline)
+
+    # Start executor
+    env = TableEnv()
+    node_registry = get_registry()
+    executor = StreamingExecutor(node_registry)
+    executor.start(pipeline, env)
+    registry.register(key, env, executor)
+
+    return {"status": "published", "key": key}
+
+
+@router.post("/{slug}/{pipeline_name}/unpublish")
+def unpublish_pipeline(slug: str, pipeline_name: str):
+    """Unpublish a streaming pipeline — stops it."""
+    from mirador.app import get_publish_registry
+    from mirador.storage.projects import ProjectStore
+
+    key = f"{slug}/{pipeline_name}"
+    registry = get_publish_registry()
+    entry = registry.unregister(key)
+
+    if entry and entry["executor"]:
+        entry["executor"].stop()
+
+    store = ProjectStore()
+    pipeline = store.load_pipeline(slug, pipeline_name)
+    if pipeline:
+        pipeline["published"] = False
+        store.save_pipeline(slug, pipeline_name, pipeline)
+
+    return {"status": "unpublished", "key": key}
 
 
 def _serialize_results(results: dict[str, Any]) -> dict[str, Any]:

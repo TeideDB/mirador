@@ -19,6 +19,7 @@ from mirador.api.nodes import router as nodes_router
 from mirador.api.pipelines import router as pipelines_router
 from mirador.api.projects import router as projects_router
 from mirador.api.ws import router as ws_router
+from mirador.api.ws_dashboard import router as ws_dashboard_router
 
 _teide: TeideLib | None = None
 
@@ -27,6 +28,17 @@ def get_teide() -> TeideLib:
     """Return the initialized TeideLib instance. Asserts it has been set up."""
     assert _teide is not None, "TeideLib not initialized — lifespan not started"
     return _teide
+
+
+_publish_registry = None
+
+
+def get_publish_registry():
+    global _publish_registry
+    if _publish_registry is None:
+        from mirador.engine.publish_registry import PublishRegistry
+        _publish_registry = PublishRegistry()
+    return _publish_registry
 
 
 @asynccontextmanager
@@ -48,10 +60,46 @@ async def lifespan(app: FastAPI):
     from mirador.engine.scheduler import start_scheduler, stop_scheduler
     await start_scheduler()
 
+    # Restore published streaming pipelines
+    import logging
+    _logger = logging.getLogger(__name__)
+
+    global _publish_registry
+    from mirador.engine.publish_registry import PublishRegistry
+    _publish_registry = PublishRegistry()
+
+    from mirador.storage.projects import ProjectStore
+    from mirador.engine.streaming_executor import StreamingExecutor
+    from mirador.engine.table_env import TableEnv
+    from mirador.api.nodes import get_registry as get_node_registry
+
+    store = ProjectStore()
+    for proj in store.list_projects():
+        slug = proj["slug"]
+        for name in store.list_pipelines(slug):
+            pipeline = store.load_pipeline(slug, name)
+            if pipeline and pipeline.get("published"):
+                key = f"{slug}/{name}"
+                try:
+                    env = TableEnv()
+                    node_reg = get_node_registry()
+                    executor = StreamingExecutor(node_reg)
+                    executor.start(pipeline, env)
+                    _publish_registry.register(key, env, executor)
+                    _logger.info("Restored published pipeline: %s", key)
+                except Exception as exc:
+                    _logger.error("Failed to restore pipeline %s: %s", key, exc)
+
     try:
         yield
     finally:
         await stop_scheduler()
+        # Stop all published pipelines
+        if _publish_registry:
+            for key in _publish_registry.list_running():
+                entry = _publish_registry.unregister(key)
+                if entry and entry["executor"]:
+                    entry["executor"].stop()
         _teide.pool_destroy()
         _teide.sym_destroy()
         _teide.arena_destroy_all()
@@ -76,6 +124,7 @@ app.include_router(nodes_router)
 app.include_router(pipelines_router)
 app.include_router(projects_router)
 app.include_router(ws_router)
+app.include_router(ws_dashboard_router)
 
 
 @app.get("/api/health")
