@@ -67,7 +67,7 @@ export default function Canvas() {
 
   const onNodeClick = useCallback(
     (_: MouseEvent, node: any) => {
-      // Delay selection to allow double-click to cancel it
+      // Cancel pending timer (double-click guard)
       if (clickTimer.current) {
         clearTimeout(clickTimer.current);
         clickTimer.current = null;
@@ -76,14 +76,14 @@ export default function Canvas() {
       clickTimer.current = setTimeout(() => {
         clickTimer.current = null;
         selectNode(node.id);
+        setInspectorNodeId(node.id);
       }, 250);
     },
-    [selectNode]
+    [selectNode, setInspectorNodeId]
   );
 
   const onNodeDoubleClick = useCallback(
     (_: MouseEvent, node: any) => {
-      // Cancel the pending single-click selection
       if (clickTimer.current) {
         clearTimeout(clickTimer.current);
         clickTimer.current = null;

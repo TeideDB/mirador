@@ -72,7 +72,8 @@ async def save_pipeline(slug: str, name: str, body: SavePipelineRequest):
     store = get_store()
     if not store.get_project(slug):
         raise HTTPException(status_code=404, detail="Project not found")
-    pipeline = body.model_dump()
+    existing = store.load_pipeline(slug, name) or {}
+    pipeline = {**existing, **body.model_dump()}
     store.save_pipeline(slug, name, pipeline)
 
     from mirador.engine.scheduler import sync_schedules

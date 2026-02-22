@@ -61,12 +61,30 @@ def refresh_dashboard(slug: str, name: str):
     if not dashboard:
         raise HTTPException(status_code=404, detail="Dashboard not found")
 
+    from mirador.app import get_publish_registry
+
     # For each data source, load and run the source pipeline
     data: dict[str, dict] = {}
     for ds in dashboard.get("data_sources", []):
         alias = ds.get("alias", "")
         workflow_name = ds.get("workflow_name", "")
         node_id = ds.get("node_id", "")
+
+        # Check if this pipeline is running as a published streaming pipeline
+        pipeline_key = f"{slug}/{workflow_name}"
+        registry = get_publish_registry()
+        entry = registry.get(pipeline_key)
+        if entry and entry.get("env"):
+            try:
+                table_data = entry["env"].get(node_id)
+                if isinstance(table_data, dict):
+                    data[alias] = {
+                        "rows": table_data.get("rows", []),
+                        "columns": table_data.get("columns", []),
+                    }
+                    continue
+            except KeyError:
+                pass
 
         pipeline = store.load_pipeline(slug, workflow_name)
         if not pipeline:

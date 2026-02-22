@@ -45,7 +45,7 @@ export default function DependenciesModal({ open, onClose }: Props) {
     setBusy(true);
     setLog([]);
     try {
-      const response = await fetch(`http://localhost:8000${url}`, {
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ packages: pkgs }),

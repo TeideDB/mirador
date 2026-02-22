@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const api = axios.create({ baseURL: 'http://localhost:8000/api' });
+export const api = axios.create({ baseURL: '/api' });
 
 export interface NodeTypeMeta {
   id: string;
@@ -57,7 +57,7 @@ export async function runPipelineStream(
   pipeline: PipelinePayload,
   onEvent: (event: SSEEvent) => void
 ): Promise<void> {
-  const response = await fetch('http://localhost:8000/api/pipelines/run-stream', {
+  const response = await fetch('/api/pipelines/run-stream', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(pipeline),

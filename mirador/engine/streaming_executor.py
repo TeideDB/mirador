@@ -193,6 +193,9 @@ class StreamingExecutor:
                         inputs, node_def.get("config", {}), env=self._env
                     )
                     outputs[n_id] = output
+                    # Store output in env for dashboard access
+                    if output and self._env is not None:
+                        self._env.set(n_id, output)
                 except Exception as exc:
                     logger.error("Streaming node %s error: %s", n_id, exc)
                     tick_ok = False

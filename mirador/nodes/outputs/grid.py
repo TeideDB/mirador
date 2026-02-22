@@ -20,12 +20,23 @@ class GridNode(BaseNode):
         },
     )
 
-    def execute(self, inputs: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
+    def execute(self, inputs: dict[str, Any], config: dict[str, Any], env=None) -> dict[str, Any]:
+        page_size = config.get("page_size", 100)
+
+        # Pre-flattened data (from streaming sources)
+        if "rows" in inputs and "columns" in inputs:
+            rows = inputs["rows"][:page_size]
+            return {
+                "rows": rows,
+                "columns": inputs["columns"],
+                "total": inputs.get("total", len(rows)),
+            }
+
+        # Teide Table or similar object
         table = inputs.get("df")
         if table is None:
             return {"rows": [], "columns": [], "total": 0}
 
-        page_size = config.get("page_size", 100)
         columns = inputs.get("columns", table.columns if hasattr(table, 'columns') else [])
         n = len(table)
         data = table.to_dict()

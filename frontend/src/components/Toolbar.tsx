@@ -19,7 +19,7 @@ export default function Toolbar() {
   const projectSlug = useStore((s) => s.currentProjectSlug);
   const { fitView } = useReactFlow();
 
-  const hasStreamSource = nodes.some((n) => n.data.category === 'stream_source');
+  const hasStreamSource = nodes.some((n) => n.data?.category === 'stream_source');
 
   const handleSave = () => {
     const s = useStore.getState();

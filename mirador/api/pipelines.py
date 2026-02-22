@@ -129,6 +129,9 @@ def publish_pipeline(slug: str, pipeline_name: str):
     # Start executor with live dashboard notification
     from mirador.api.ws_dashboard import notify_data_changed
 
+    # Transform React Flow format → executor format
+    exec_pipeline = _unwrap_reactflow(pipeline)
+
     env = TableEnv()
     node_registry = get_registry()
     executor = StreamingExecutor(node_registry)
@@ -136,7 +139,7 @@ def publish_pipeline(slug: str, pipeline_name: str):
     def on_tick(tick_env: TableEnv):
         notify_data_changed(key, tick_env.list())
 
-    executor.start(pipeline, env, on_tick_complete=on_tick)
+    executor.start(exec_pipeline, env, on_tick_complete=on_tick)
     registry.register(key, env, executor)
 
     return {"status": "published", "key": key}
@@ -162,6 +165,24 @@ def unpublish_pipeline(slug: str, pipeline_name: str):
         store.save_pipeline(slug, pipeline_name, pipeline)
 
     return {"status": "unpublished", "key": key}
+
+
+def _unwrap_reactflow(pipeline: dict) -> dict:
+    """Convert React Flow node format to executor format.
+
+    React Flow stores nodes as {type: "pipeline", data: {nodeType, config, ...}}.
+    The executor expects {type: "kdb_source", config: {...}}.
+    """
+    nodes = []
+    for n in pipeline.get("nodes", []):
+        data = n.get("data") or {}
+        node_type = data.get("nodeType") or n.get("type", "")
+        nodes.append({
+            "id": n["id"],
+            "type": node_type,
+            "config": data.get("config") or n.get("config", {}),
+        })
+    return {"nodes": nodes, "edges": pipeline.get("edges", [])}
 
 
 def _serialize_results(results: dict[str, Any]) -> dict[str, Any]:

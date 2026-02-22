@@ -89,7 +89,9 @@ async def lifespan(app: FastAPI):
                     def on_tick(tick_env, k=key):
                         notify_data_changed(k, tick_env.list())
 
-                    executor.start(pipeline, env, on_tick_complete=on_tick)
+                    from mirador.api.pipelines import _unwrap_reactflow
+                    exec_pipeline = _unwrap_reactflow(pipeline)
+                    executor.start(exec_pipeline, env, on_tick_complete=on_tick)
                     _publish_registry.register(key, env, executor)
                     _logger.info("Restored published pipeline: %s", key)
                 except Exception as exc:

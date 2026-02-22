@@ -205,6 +205,75 @@ export default function Inspector() {
           {nodeType === 'pdf_render' && (
             <PdfRenderInspector config={config} setConfig={setConfig} />
           )}
+
+          {/* kdb+ Stream source fields */}
+          {nodeType === 'kdb_source' && (
+            <>
+              <div className="field-group">
+                <label>Host</label>
+                <input
+                  type="text"
+                  value={config.host ?? 'localhost'}
+                  onChange={(e) => setConfig('host', e.target.value)}
+                  placeholder="localhost"
+                  spellCheck={false}
+                />
+              </div>
+              <div className="field-group">
+                <label>Port</label>
+                <input
+                  type="number"
+                  value={config.port ?? 5001}
+                  onChange={(e) => setConfig('port', parseInt(e.target.value) || 5001)}
+                  min={1}
+                  max={65535}
+                />
+              </div>
+              <div className="field-group">
+                <label>Init Expression</label>
+                <CodeEditor
+                  value={config.init_expr ?? ''}
+                  onChange={(val) => setConfig('init_expr', val)}
+                  language="plaintext"
+                  placeholder=".u.sub[`trade;`]"
+                  minHeight="60px"
+                />
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                  q expression sent on connect (synchronous)
+                </span>
+              </div>
+              <div className="field-group">
+                <label>Subscribe Expression</label>
+                <CodeEditor
+                  value={config.subscribe_expr ?? ''}
+                  onChange={(val) => setConfig('subscribe_expr', val)}
+                  language="plaintext"
+                  placeholder=".u.sub[`trade;`]"
+                  minHeight="60px"
+                />
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                  q expression sent when subscribing (async)
+                </span>
+              </div>
+            </>
+          )}
+
+          {/* Init Script fields */}
+          {nodeType === 'init_script' && (
+            <div className="field-group">
+              <label>Python Code</label>
+              <CodeEditor
+                value={config.code ?? ''}
+                onChange={(val) => setConfig('code', val)}
+                language="python"
+                placeholder={"# Available: lib (TeideLib), env (TableEnv), input\n# Set output = {...} with your result\n\noutput = {}"}
+                minHeight="240px"
+              />
+              <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                Runs once at pipeline start. Set <code>output</code> dict with results.
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </div>
